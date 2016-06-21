@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html" charset="utf-8">
+		<title>Bezzier curves</title>
+		<script language="javascript" type="text/javascript" src="jQuery.js"></script>
+		<script language="javascript" type="text/javascript" src="jQuery.flot.js"></script>
+		<script language="javascript" type="text/javascript" src="http://jumjum123.github.io/JUMFlot/javascripts/JUMFlot.min.js"></script>
+	</head>
+	<body>
+		<input id="count" type="text" size="10"><br>
+		<input type="button" size="10" value="set count" onclick="reDraw(generPoints(input.value))">
+
+		<div id="placeholder" style="width:800px;height:600px;"></div>
+		<script language="javascript" type="text/javascript">
+			var input = document.getElementById('count');
+			input.defaultValue = 3;
+		
+			var factorial = function(n) {
+				if ((n === 0)||(n === 1)) {
+					return 1;
+				} else {
+					return n * factorial(n - 1);
+				}
+			};
+
+			var binCoef = function(n, k) {
+				return factorial(n)/(factorial(k) * factorial(n - k));
+			};
+
+			var bezCurve = function(arr) {
+				return function(t){
+					if ((t > 1.0) || (t < 0.0)){
+						return 0.0;
+					}
+					var n = arr.length - 1;
+
+					var result = {
+						x: 0.0,
+						y: 0.0
+					};
+
+					for (var i = 0; i <= n; i++){
+						var bi = binCoef(n, i) * Math.pow(t, i) * Math.pow(1 - t, n - i);
+						result.x += bi * arr[i].x;
+						result.y += bi * arr[i].y;
+					}
+
+					return result;
+				};
+			};
+			
+			var generateData = function(arr) {
+				var n = arr.length - 1;
+				var bez = bezCurve(arr);
+				var step = 1.0/(n*100);
+				var result = [];
+				for (var t = 0.0; t <= 1.0; t += step){
+					result[result.length] = [bez(t).x, bez(t).y];
+				}
+				return {
+					label: "Bezzier",
+					color: "green",
+					data: result,
+					lines: {
+						show: true,
+						lineWidth: 2
+					},
+					clickable: false,
+					hoverable: false,
+					editable: false,
+					editMode: "none"
+				};
+			};
+
+			var generPoints = function(n) {
+				var arr = [];
+				for (var i = 0; i <= n; i++){
+					arr[i] = {
+						x: 0.0 + i * (1/n),
+						y: 0.0 + i * i * (1/(n * n))
+					};
+				}
+				return arr;
+			};
+			
+			
+			var plot;
+			var all_data;
+			var options = {grid: { editable: true, hoverable: true, clickable: false }, series: {lines: {editMode: "none", editable: false, hoverable: false, clickable: false} }};
+			
+			var reDraw = function(points) {
+				all_data = [];
+				
+				for (var i = 0; i < points.length; i++){
+					all_data[i] = {
+						label: "Point " + i,
+						color: "blue",
+						points: {
+							show: true,
+							radius: 6,
+							symbol: "circle",
+							fill: true
+						},
+						lines: {
+							show: true,
+						},
+						clickable: false,
+						hoverable: true,
+						editable: true,
+						editMode: 'xy',
+						data: [[points[i].x, points[i].y]]
+					};
+				}
+				all_data[points.length] = generateData(points);
+				plot = $.plot($("#placeholder"), all_data, options);
+			};
+
+			var dataToArr = function(){
+				var arr = [];
+				for (var i = 0; i <= input.value; i++){
+					arr[i] = {
+						x: all_data[i].data[0][0],
+						y: all_data[i].data[0][1]
+					};
+				}
+				return arr;
+			};
+
+			var points = generPoints(input.value);			
+			reDraw(points);
+
+			$("#placeholder").bind("datadrop", function(event, pos, item) {		
+				all_data[item.seriesIndex].data[item.dataIndex] = [pos.x1, pos.y1];
+				var newPoints = dataToArr();
+				all_data[newPoints.length] = generateData(newPoints);
+				plot = $.plot($("#placeholder"), all_data, options);
+			});
+		</script>
+	</body>
+</html>
