@@ -1,0 +1,11 @@
+{
+	"name": "news",
+	"version": "1.0.0",
+	"description": "news feed",
+	"main": "index.html",
+	"script": {
+		"start": "node server.js"
+	},
+	"author": "Artem Muravev", 
+	"license": "OpenSource"
+}
